@@ -84,7 +84,7 @@ def calculate_loss(net, target_net):
   # because the Q_s has one row per sample and the actions will be use as indices to choose the value from each row
   # lastly, because the gather will return a column and we need a row, we will squeeze it
   # gather on dim 1 means on rows
-  state_action_values = Q_s.gather(1, actions_v.unsqueeze(-1)).squeeze(-1)
+  state_action_values = Q_s.gather(1, actions_v.type(torch.int64).unsqueeze(-1)).squeeze(-1)
 
   # now we need Q_s_prime_a - i.e. the next state values
   # we get them from the target net
