@@ -26,27 +26,28 @@ class Net(nn.Module):
   def forward(self, x):
     return self.net(x.float())
 
+
 def epsilon_by_frame(frame_idx):
   return EPSILON_FINAL + (EPSILON_START - EPSILON_FINAL) * math.exp(-1.0 * frame_idx / EPSILON_DECAY)
 
-device = torch.device("cpu")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 GAMMA=0.9
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
 
 EPSILON_DECAY = 5000
-EPSILON_FINAL = 0.02
+EPSILON_FINAL = 0.01
 EPSILON_START = 1.0
 
 LEARNING_RATE = 1e-3
 
-TARGET_NET_SYNC = 10 ** 3
+TARGET_NET_SYNC = 1e3
 
 STOP_REWARD = 195
-# this seems to have no effect - it still spins a process for every core and maxes it out to 99% utiliziation
-os.environ['OMP_NUM_THREADS'] = "1"
+
 env = gym.make("CartPole-v1")
 # env.render()
 
@@ -70,7 +71,7 @@ episode_start = time.time()
 start = time.time()
 episode_frame = 0
 
-state = env.reset()
+state, _ = env.reset()
 
 def calculate_loss(net, target_net):
   states_v, actions_v, rewards_v, dones_v, next_states_v = buffer.sample(BATCH_SIZE)
@@ -80,7 +81,7 @@ def calculate_loss(net, target_net):
   Q_s = net.forward(states_v)
 
   # now we need the state_action_values for the actions that were selected (i.e. the action from the tuple)
-  # unlike my normal DQN, the actions tensor is already {100, 1}, i.e. unsqeezed so we don't need to unsqueeze it again
+  # actions tensor is already {100, 1}, i.e. unsqeezed so we don't need to unsqueeze it again
   # because the Q_s has one row per sample and the actions will be use as indices to choose the value from each row
   # lastly, because the gather will return a column and we need a row, we will squeeze it
   # gather on dim 1 means on rows
@@ -100,7 +101,7 @@ def calculate_loss(net, target_net):
 
   optimizer.zero_grad()
   loss.backward()
-  torch.nn.utils.clip_grad_norm_(net.parameters(), 0.1)
+  # torch.nn.utils.clip_grad_norm_(net.parameters(), 0.1)
   optimizer.step()
 
   return loss
@@ -124,7 +125,8 @@ while True:
     # print(action)
 
   # take step in the environment
-  new_state, reward, is_done, _ = env.step(action)
+  new_state, reward, terminated, truncated, _ = env.step(action)
+  is_done = terminated or truncated
   episode_reward += reward
 
   # store the transition in the experience replay buffer
@@ -136,7 +138,7 @@ while True:
   if is_done:
     done_reward = episode_reward
     all_rewards.append(episode_reward)
-    state = env.reset()
+    state, _ = env.reset()
     if episode_reward > max_reward:
       max_reward = episode_reward
 
@@ -144,7 +146,7 @@ while True:
       r100 = np.mean(all_rewards[-100:])
       l100 = np.mean(losses[-100:])
       fps = (frame_idx - episode_frame) / (time.time() - episode_start)
-      print(f"Frame: {frame_idx}: R100: {r100}, MaxR: {max_reward}, R: {episode_reward}, FPS: {fps}, Epsilon: {epsilon}, L100: {l100}")
+      print(f"Frame: {frame_idx}: R100: {r100}, MaxR: {max_reward}, R: {episode_reward}, FPS: {fps}, L100: {l100}, Epsilon: {epsilon}")
 
     episode_reward = 0
     episode_frame = frame_idx

@@ -1,4 +1,4 @@
-name: zapq
+name: comp3702-t11
 channels:
   - pytorch
   - defaults
@@ -73,9 +73,9 @@ dependencies:
   - zstd=1.4.9=haebb681_0
   - pip:
     - cloudpickle==2.0.0
-    - gym==0.23.1
+    - gym==0.26.2
     - gym-notices==0.0.6
     - importlib-metadata==4.11.3
     - pygame==2.1.2
     - zipp==3.7.0
-prefix: /home/bohm/miniconda3/envs/zapq
+prefix: ~/miniconda3/envs/comp3702-t11

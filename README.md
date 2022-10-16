@@ -8,8 +8,12 @@ To install the dependencies with conda use:
 
     conda env create -f environment.yml
 
+This way, PyTorch without GPU will be installed. If you have a GPU and want a GPU version, follow [these instructions](https://pytorch.org/get-started/locally/).
+
 ### Running
 
     python dqn_cartpole.py
 
-With the default hyper-params it should start learning at about 13k frames and it should reach R100 of 195 at about 33k. 
+With the default hyper-params it should start learning at about 13k frames and it should reach R100 of 195 at about 40k.
+
+The hyper-parameters are hard-coded to make it easier to follow, but they should be moved to a config file.
