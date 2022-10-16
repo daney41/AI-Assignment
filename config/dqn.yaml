@@ -1,0 +1,43 @@
+CartPole-v1:
+  gamma: 0.9
+  batch_size: 128
+  hidden_size: 128
+  hidden_size2: 128
+
+  replay_size: 1.0e+4
+  replay_size_start: 5000
+
+  epsilon_decay: 5000
+  epsilon_final: 0.01
+  epsilon_start: 1.0
+
+  learning_rate: 1.0e-3
+
+  target_net_sync: 1.0e+3
+
+  stopping_reward: 195
+  max_frames: 1.0e+5
+
+  save_path: saved_models
+
+LunarLander-v2:
+  gamma: 0.9
+  batch_size: 128
+  hidden_size: 400
+  hidden_size2: 300
+
+  replay_size: 1.0e+5
+  replay_size_start: 5000
+
+  epsilon_decay: 5000
+  epsilon_final: 0.01
+  epsilon_start: 1.0
+
+  learning_rate: 1.0e-3
+
+  target_net_sync: 1.0e+3
+
+  stopping_reward: 200
+  max_frames: 1.0e+6
+
+  save_path: saved_models
