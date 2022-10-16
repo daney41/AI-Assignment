@@ -21,3 +21,5 @@ The hyper-parameters are hard-coded to make it easier to follow, but they should
 #### [OpenAI Gym](https://www.gymlibrary.dev/) Environments
 
 [dqn_gym.py](dqn_gym.py) has the same code but the hyper-params are moved to the [config file](config/dqn.yaml) for easier experimentation.
+
+It also saves the trained model in [saved_models/](saved_models/).

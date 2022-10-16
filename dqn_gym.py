@@ -9,13 +9,14 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from dqn_common import DqnNet, epsilon_by_frame
+from dqn_common import epsilon_by_frame, DqnNetSingleLayer, DqnNetTwoLayers
 from lib.experience_buffer import ExperienceBuffer, Experience
 import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--env", default="CartPole-v1", help="Full name of the environment, e.g. CartPole-v1, LunarLander-v2, etc.")
 parser.add_argument("-c", "--config_file", default="config/dqn.yaml", help="Config file with hyper-parameters")
+parser.add_argument("-l", "--hidden_layers", default=1, help="No of hidden layers in the DQN network")
 args = parser.parse_args()
 
 # Hyperparameters for the requried environment
@@ -27,14 +28,28 @@ params = hypers[args.env]
 
 env = gym.make(args.env)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+  device = torch.device("cuda")
+  print("Training on GPU")
+else:
+  device = torch.device("cpu")
+  print("Training on CPU")
 
-net = DqnNet(obs_size=env.observation_space.shape[0],
-             hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
-             n_actions=env.action_space.n).to(device)
-target_net = DqnNet(obs_size=env.observation_space.shape[0],
-                    hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
-                    n_actions=env.action_space.n).to(device)
+if args.hidden_layers == 2:
+  net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
+               hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
+               n_actions=env.action_space.n).to(device)
+  target_net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
+                      hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
+                      n_actions=env.action_space.n).to(device)
+else:
+  net = DqnNetSingleLayer(obs_size=env.observation_space.shape[0],
+               hidden_size=params['hidden_size'],
+               n_actions=env.action_space.n).to(device)
+  target_net = DqnNetSingleLayer(obs_size=env.observation_space.shape[0],
+                      hidden_size=params['hidden_size'],
+                      n_actions=env.action_space.n).to(device)
+
 print(net)
 
 # writer = SummaryWriter(comment="-CartPoleScratch")
@@ -92,7 +107,6 @@ def calculate_loss(net, target_net):
 
 while True:
   frame_idx += 1
-  episode_no += 1
 
   # calculate the value of decaying epsilon
   epsilon = epsilon_by_frame(frame_idx, params)
@@ -105,7 +119,7 @@ while True:
     state_v = torch.tensor(state_a).to(device)
     q_vals_v = net(state_v)
     _, act_v = torch.max(q_vals_v, dim=1)
-    action = int(act_v.item())
+    action = act_v.item()
     # print(action)
 
   # take step in the environment
@@ -122,6 +136,8 @@ while True:
   if is_done:
     done_reward = episode_reward
     all_rewards.append(episode_reward)
+    episode_no += 1
+
     state, _ = env.reset()
     if episode_reward > max_reward:
       max_reward = episode_reward
@@ -130,7 +146,7 @@ while True:
       r100 = np.mean(all_rewards[-100:])
       l100 = np.mean(losses[-100:])
       fps = (frame_idx - episode_frame) / (time.time() - episode_start)
-      print(f"Frame: {frame_idx}: Episode: {episode_no}, R100: {r100}, MaxR: {max_reward}, R: {episode_reward}, FPS: {fps}, L100: {l100}, Epsilon: {epsilon}")
+      print(f"Frame: {frame_idx}: Episode: {episode_no}, R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f}, L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
 
     episode_reward = 0
     episode_frame = frame_idx
@@ -149,7 +165,9 @@ while True:
   if r100 > params['stopping_reward']:
     print("Finished training")
 
-    name = f"{args.env}_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
+    name = f"{args.env}_{args.hidden_layers}layer_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
+    if not os.path.exists(params['save_path']):
+      os.makedirs(params['save_path'])
     torch.save(net.state_dict(), os.path.join(params['save_path'], name))
 
     break

@@ -21,16 +21,16 @@ CartPole-v1:
   save_path: saved_models
 
 LunarLander-v2:
-  gamma: 0.9
+  gamma: 0.99
   batch_size: 128
-  hidden_size: 400
+  hidden_size: 256
   hidden_size2: 300
 
-  replay_size: 1.0e+5
+  replay_size: 10000
   replay_size_start: 5000
 
-  epsilon_decay: 5000
-  epsilon_final: 0.01
+  epsilon_decay: 50000
+  epsilon_final: 0.001
   epsilon_start: 1.0
 
   learning_rate: 1.0e-3

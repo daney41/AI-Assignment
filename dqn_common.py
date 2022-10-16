@@ -3,15 +3,27 @@ import math
 import torch.nn as nn
 
 # Define the network structure - in this case 2 hidden layers (CartPole can be solved faster with a single hidden layer)
-class DqnNet(nn.Module):
+class DqnNetTwoLayers(nn.Module):
   def __init__(self, obs_size, hidden_size, hidden_size2, n_actions):
-    super(DqnNet, self).__init__()
+    super(DqnNetTwoLayers, self).__init__()
     self.net = nn.Sequential(
       nn.Linear(obs_size, hidden_size),
       nn.ReLU(),
       nn.Linear(hidden_size, hidden_size2),
       nn.ReLU(),
       nn.Linear(hidden_size2, n_actions)
+    )
+
+  def forward(self, x):
+    return self.net(x.float())
+
+class DqnNetSingleLayer(nn.Module):
+  def __init__(self, obs_size, hidden_size, n_actions):
+    super(DqnNetSingleLayer, self).__init__()
+    self.net = nn.Sequential(
+      nn.Linear(obs_size, hidden_size),
+      nn.ReLU(),
+      nn.Linear(hidden_size, n_actions)
     )
 
   def forward(self, x):
