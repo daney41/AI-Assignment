@@ -12,15 +12,14 @@ from lib.experience_buffer import ExperienceBuffer, Experience
 import os
 
 # Define the network structure - in this case 2 hidden layers (CartPole can be solved faster with a single hidden layer)
-class Net(nn.Module):
-  def __init__(self, obs_size, hidden_size, hidden_size2, n_actions):
-    super(Net, self).__init__()
+class DqnNet(nn.Module):
+  def __init__(self, obs_size, hidden_size, n_actions):
+    super(DqnNet, self).__init__()
     self.net = nn.Sequential(
       nn.Linear(obs_size, hidden_size),
       nn.ReLU(),
-      nn.Linear(hidden_size, hidden_size2),
       nn.ReLU(),
-      nn.Linear(hidden_size2, n_actions)
+      nn.Linear(hidden_size, n_actions)
     )
 
   def forward(self, x):
@@ -51,8 +50,8 @@ STOP_REWARD = 195
 env = gym.make("CartPole-v1")
 # env.render()
 
-net = Net(obs_size=env.observation_space.shape[0], hidden_size=128, hidden_size2=128, n_actions=env.action_space.n).to(device)
-target_net = Net(obs_size=env.observation_space.shape[0], hidden_size=128, hidden_size2=128, n_actions=env.action_space.n).to(device)
+net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=128, n_actions=env.action_space.n).to(device)
+target_net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=128, n_actions=env.action_space.n).to(device)
 print(net)
 
 # writer = SummaryWriter(comment="-CartPoleScratch")
@@ -146,7 +145,7 @@ while True:
       r100 = np.mean(all_rewards[-100:])
       l100 = np.mean(losses[-100:])
       fps = (frame_idx - episode_frame) / (time.time() - episode_start)
-      print(f"Frame: {frame_idx}: R100: {r100}, MaxR: {max_reward}, R: {episode_reward}, FPS: {fps}, L100: {l100}, Epsilon: {epsilon}")
+      print(f"Frame: {frame_idx}: R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f}, L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
 
     episode_reward = 0
     episode_frame = frame_idx
