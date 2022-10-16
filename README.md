@@ -21,5 +21,9 @@ The hyper-parameters are hard-coded to make it easier to follow, but they should
 #### [OpenAI Gym](https://www.gymlibrary.dev/) Environments
 
 [dqn_gym.py](dqn_gym.py) has the same code but the hyper-params are moved to the [config file](config/dqn.yaml) for easier experimentation.
+Provides implementation of DQN with a single layer as well as 2 layers (controlled by `-l` ).
 
 It also saves the trained model in [saved_models/](saved_models/).
+
+    python dqn_gym.py -e CartPole-v1 -l 1
+    python dqn_gym.py -e LunarLander-v2 -l 1
