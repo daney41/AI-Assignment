@@ -18,7 +18,6 @@ class DqnNet(nn.Module):
     self.net = nn.Sequential(
       nn.Linear(obs_size, hidden_size),
       nn.ReLU(),
-      nn.ReLU(),
       nn.Linear(hidden_size, n_actions)
     )
 
@@ -37,6 +36,8 @@ BATCH_SIZE = 128
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
 
+HIDDEN_SIZE = 128
+
 EPSILON_DECAY = 5000
 EPSILON_FINAL = 0.01
 EPSILON_START = 1.0
@@ -50,8 +51,8 @@ STOP_REWARD = 195
 env = gym.make("CartPole-v1")
 # env.render()
 
-net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=128, n_actions=env.action_space.n).to(device)
-target_net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=128, n_actions=env.action_space.n).to(device)
+net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=HIDDEN_SIZE, n_actions=env.action_space.n).to(device)
+target_net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=HIDDEN_SIZE, n_actions=env.action_space.n).to(device)
 print(net)
 
 # writer = SummaryWriter(comment="-CartPoleScratch")
