@@ -9,14 +9,17 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from dqn_common import epsilon_by_frame, DqnNetSingleLayer, DqnNetTwoLayers
+from dqn_common import epsilon_by_frame, DqnNetSingleLayer, DqnNetTwoLayers, alpha_sync, DuellingDqn
 from lib.experience_buffer import ExperienceBuffer, Experience
 import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--env", default="CartPole-v1", help="Full name of the environment, e.g. CartPole-v1, LunarLander-v2, etc.")
 parser.add_argument("-c", "--config_file", default="config/dqn.yaml", help="Config file with hyper-parameters")
-parser.add_argument("-l", "--hidden_layers", default=1, help="No of hidden layers in the DQN network")
+parser.add_argument("-n", "--network", default='s',
+                    help="DQN network architecture `s` for single hidden layer, `d` for 2 hidden layers and `dd` for duelling DQN",
+                    choices=['s', 'd', 'dd'])
+parser.add_argument("-s", "--seed", type=int, help="Manual seed (leave blank for random seed)")
 args = parser.parse_args()
 
 # Hyperparameters for the requried environment
@@ -27,6 +30,12 @@ if args.env not in hypers:
 params = hypers[args.env]
 
 env = gym.make(args.env)
+# env.seed(params['seed'])
+
+# Set seeds
+if args.seed is not None:
+  torch.manual_seed(args.seed)
+  np.random.seed(args.seed)
 
 if torch.cuda.is_available():
   device = torch.device("cuda")
@@ -35,20 +44,28 @@ else:
   device = torch.device("cpu")
   print("Training on CPU")
 
-if args.hidden_layers == 2:
+if args.network == 'd':
   net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
                hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
                n_actions=env.action_space.n).to(device)
   target_net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
                       hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
                       n_actions=env.action_space.n).to(device)
-else:
+elif args.network == 's':
   net = DqnNetSingleLayer(obs_size=env.observation_space.shape[0],
                hidden_size=params['hidden_size'],
                n_actions=env.action_space.n).to(device)
   target_net = DqnNetSingleLayer(obs_size=env.observation_space.shape[0],
                       hidden_size=params['hidden_size'],
                       n_actions=env.action_space.n).to(device)
+else:
+  net = DuellingDqn(obs_size=env.observation_space.shape[0],
+               hidden_size=params['hidden_size'],
+               n_actions=env.action_space.n).to(device)
+  target_net = DuellingDqn(obs_size=env.observation_space.shape[0],
+                      hidden_size=params['hidden_size'],
+                      n_actions=env.action_space.n).to(device)
+
 
 print(net)
 
@@ -68,6 +85,7 @@ episode_start = time.time()
 start = time.time()
 episode_frame = 0
 episode_no = 0
+visualizer_on = False
 
 state, _ = env.reset()
 
@@ -99,7 +117,10 @@ def calculate_loss(net, target_net):
 
   optimizer.zero_grad()
   loss.backward()
-  # torch.nn.utils.clip_grad_norm_(net.parameters(), 0.1)
+
+  if params['clip_gradient']:
+    torch.nn.utils.clip_grad_norm_(net.parameters(), 0.1)
+
   optimizer.step()
 
   return loss
@@ -148,6 +169,14 @@ while True:
       fps = (frame_idx - episode_frame) / (time.time() - episode_start)
       print(f"Frame: {frame_idx}: Episode: {episode_no}, R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f}, L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
 
+      # visualize the training when reachedd 95% of the target R100
+      if not visualizer_on and r100 > 0.95 * params['stopping_reward']:
+        env = gym.make(args.env, render_mode='human')
+        env.reset()
+        env.render()
+        visualizer_on = True
+
+
     episode_reward = 0
     episode_frame = frame_idx
     episode_start = time.time()
@@ -159,13 +188,16 @@ while True:
   loss = calculate_loss(net, target_net)
   losses.append(loss.item())
 
-  if frame_idx % params['target_net_sync'] == 0:
+
+  if params['alpha_sync']:
+    alpha_sync(net, target_net, alpha=1 - params['tau'])
+  elif frame_idx % params['target_net_sync'] == 0:
     target_net.load_state_dict(net.state_dict())
 
   if r100 > params['stopping_reward']:
     print("Finished training")
 
-    name = f"{args.env}_{args.hidden_layers}layer_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
+    name = f"{args.env}_{args.network}_nn_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
     if not os.path.exists(params['save_path']):
       os.makedirs(params['save_path'])
     torch.save(net.state_dict(), os.path.join(params['save_path'], name))

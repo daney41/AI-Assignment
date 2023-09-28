@@ -31,7 +31,7 @@ def epsilon_by_frame(frame_idx):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-GAMMA=0.9
+GAMMA=0.99
 BATCH_SIZE = 128
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
@@ -40,7 +40,7 @@ HIDDEN_SIZE = 128
 
 EPSILON_DECAY = 5000
 EPSILON_FINAL = 0.01
-EPSILON_START = 1.0
+EPSILON_START = 1.00
 
 LEARNING_RATE = 1e-3
 
@@ -48,7 +48,10 @@ TARGET_NET_SYNC = 1e3
 
 STOP_REWARD = 195
 
-env = gym.make("CartPole-v1")
+ENV = "CartPole-v0"
+SAVED_MODELS_PATH = 'saved_models'
+
+env = gym.make(ENV)
 # env.render()
 
 net = DqnNet(obs_size=env.observation_space.shape[0], hidden_size=HIDDEN_SIZE, n_actions=env.action_space.n).to(device)
@@ -164,6 +167,11 @@ while True:
 
   if r100 > 195:
     print("Finished training")
+    name = f"{ENV}_{HIDDEN_SIZE}_hidden_size_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
+    if not os.path.exists(SAVED_MODELS_PATH):
+      os.makedirs(SAVED_MODELS_PATH)
+    torch.save(net.state_dict(), os.path.join(SAVED_MODELS_PATH, name))
+
     break
 
   if frame_idx > 100000:
