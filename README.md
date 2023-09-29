@@ -36,6 +36,8 @@ It also saves the trained model in [saved_models/](saved_models/).
 `CartPole-v1` is much more difficult to solve than `CartPole-v0`, but both `d` and `dd` options should do it, although the number of frames may vary greatly.
 The solved threshold is 475 (which means the R100 needs to reach 475). Both of them also use soft updates of the target network, rather than full update every 1k frames.
 
+The visualizer will open when the R100 reaches 95%.
+
 This is how it looks when it's almost solved:
 
 ![CartPole-v1](resources/CartPole-v1.gif)
