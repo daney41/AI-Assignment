@@ -17,8 +17,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--env", default="CartPole-v1", help="Full name of the environment, e.g. CartPole-v1, LunarLander-v2, etc.")
 parser.add_argument("-c", "--config_file", default="config/dqn.yaml", help="Config file with hyper-parameters")
 parser.add_argument("-n", "--network", default='s',
-                    help="DQN network architecture `s` for single hidden layer, `d` for 2 hidden layers and `dd` for duelling DQN",
-                    choices=['s', 'd', 'dd'])
+                    help="DQN network architecture `single-hidden` for single hidden layer, `two-hidden` for 2 hidden layers and `duelling-dqn` for duelling DQN",
+                    choices=['single-hidden', 'two-hidden', 'duelling-dqn'])
 parser.add_argument("-s", "--seed", type=int, help="Manual seed (leave blank for random seed)")
 args = parser.parse_args()
 
@@ -43,14 +43,14 @@ else:
     device = torch.device("cpu")
     print("Training on CPU")
 
-if args.network == 'd':
+if args.network == 'two-hidden':
     net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
                           hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
                           n_actions=env.action_space.n).to(device)
     target_net = DqnNetTwoLayers(obs_size=env.observation_space.shape[0],
                                  hidden_size=params['hidden_size'], hidden_size2=params['hidden_size2'],
                                  n_actions=env.action_space.n).to(device)
-elif args.network == 's':
+elif args.network == 'single-hidden':
     net = DqnNetSingleLayer(obs_size=env.observation_space.shape[0],
                             hidden_size=params['hidden_size'],
                             n_actions=env.action_space.n).to(device)
