@@ -46,7 +46,6 @@ class Solver:
         visited = set()  # store the visited states
         visited.add(self.initial_state)
 
-        # generate the state list of environment using bfs
         while queue:
             current_state = queue.popleft()
 
@@ -166,7 +165,7 @@ class Solver:
         """
         Initialise any variables required before the start of Policy Iteration.
         """
-        self.V = {state: 0 for state in self.states}  # Store initial value for each state
+        self.V = {state: 0 for state in self.states}  # Store state value mappings
         self.policy = {state: BEE_ACTIONS[0] for state in self.states}  # Store policy for each state
 
     def pi_is_converged(self):
@@ -276,8 +275,8 @@ class Solver:
 
     def apply_movements(self, state, movements: list):
         """
-        根据给定的状态和动作，计算可能的最小 reward 和最终的状态。
-        使用 apply_dynamic 处理漂移、双重移动情况，返回最小 reward 和最终状态。
+        Based on the given state and action, calculate the possible minimum reward and final state.
+        Use apply_dynamic to handle drift and double move situations, and return the minimum reward and final state.
         """
         # Initialize the state and reward
         new_state = state
