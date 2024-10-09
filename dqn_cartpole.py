@@ -1,6 +1,6 @@
 import argparse
 
-import gym
+import gymnasium as gym
 import math
 import numpy as np
 import time
@@ -31,7 +31,7 @@ def epsilon_by_frame(frame_idx):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-GAMMA=0.99
+GAMMA = 0.99
 BATCH_SIZE = 128
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
@@ -48,7 +48,7 @@ TARGET_NET_SYNC = 1e3
 
 STOP_REWARD = 195
 
-ENV = "CartPole-v0"
+ENV = "CartPole-v0" #start by using v0 which is faster to solve (instead of v1)
 SAVED_MODELS_PATH = 'saved_models'
 
 env = gym.make(ENV)

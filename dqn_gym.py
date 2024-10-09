@@ -1,7 +1,7 @@
 import argparse
 import os
 
-import gym
+import gymnasium as gym
 import math
 import numpy as np
 import time
@@ -39,6 +39,9 @@ if args.seed is not None:
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print("Training on GPU")
+# elif torch.backends.mps.is_available(): #Mac computers; (sometimes slower, e.g. 200fps vs 700fps)
+#     device = torch.device("mps")
+#     print("Training on MPS")
 else:
     device = torch.device("cpu")
     print("Training on CPU")
@@ -168,7 +171,7 @@ while True:
             fps = (frame_idx - episode_frame) / (time.time() - episode_start)
             print(f"Frame: {frame_idx}: Episode: {episode_no}, R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f}, L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
 
-            # visualize the training when reachedd 95% of the target R100
+            # visualize the training when reached 95% of the target R100
             if not visualizer_on and r100 > 0.95 * params['stopping_reward']:
                 env = gym.make(args.env, render_mode='human')
                 env.reset()

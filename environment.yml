@@ -74,8 +74,8 @@ dependencies:
   - pip:
     - box2d==2.3.10
     - cloudpickle==2.0.0
-    - gym==0.26.2
-    - gym-notices==0.0.6
+    - gymnasium==1.0.0
+    - gym-notices==0.0.8
     - importlib-metadata==4.11.3
     - pygame==2.1.2
     - pyyaml==6.0
