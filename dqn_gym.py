@@ -29,7 +29,7 @@ if args.env not in hypers:
     raise Exception(f'Hyper-parameters not found for env {args.env} - please add it to the config file (config/dqn.yaml)')
 params = hypers[args.env]
 
-env = gym.make(args.env)
+env = gym.make(args.env, render_mode='human')
 
 # Set seeds
 if args.seed is not None:
@@ -204,8 +204,10 @@ while True:
             os.makedirs(params['save_path'])
         torch.save(net.state_dict(), os.path.join(params['save_path'], name))
 
+        env.close()
         break
 
     if frame_idx > params['max_frames']:
         print(f"Ran out of time at {time.time() - start}")
+        env.close()
         break

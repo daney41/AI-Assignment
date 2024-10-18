@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from lib.experience_buffer import ExperienceBuffer, Experience
 import os
+import matplotlib.pyplot as plt
 
 # Define the network structure - in this case 2 hidden layers (CartPole can be solved faster with a single hidden layer)
 class DqnNet(nn.Module):
@@ -46,9 +47,10 @@ LEARNING_RATE = 1e-3
 
 TARGET_NET_SYNC = 1e3
 
-STOP_REWARD = 195
-
 ENV = "CartPole-v0" #start by using v0 which is faster to solve (instead of v1)
+MAX_EPISODE_STEPS = 200 if ENV == "CartPole-v0" else 500
+STOP_REWARD = 195.0 if ENV == "CartPole-v0" else 475.0
+MAX_FRAMES = 50000
 SAVED_MODELS_PATH = 'saved_models'
 
 env = gym.make(ENV)
@@ -109,6 +111,17 @@ def calculate_loss(net, target_net):
 
   return loss
 
+def plot_results(all_rewards, losses):
+  plt.figure(figsize=(12, 5))
+  plt.subplot(1, 2, 1)
+  plt.plot(all_rewards)
+  plt.title('Rewards')
+
+  plt.subplot(1, 2, 2)
+  plt.plot(losses)
+  plt.title('Losses')
+
+  plt.show()
 
 while True:
   frame_idx += 1
@@ -165,7 +178,7 @@ while True:
   if frame_idx % TARGET_NET_SYNC == 0:
     target_net.load_state_dict(net.state_dict())
 
-  if r100 > 195:
+  if r100 > STOP_REWARD:
     print("Finished training")
     name = f"{ENV}_{HIDDEN_SIZE}_hidden_size_DQN_act_net_%+.3f_%d.dat" % (r100, frame_idx)
     if not os.path.exists(SAVED_MODELS_PATH):
@@ -174,6 +187,8 @@ while True:
 
     break
 
-  if frame_idx > 100000:
+  if frame_idx > MAX_FRAMES:
     print(f"Ran out of time at {time.time() - start}")
     break
+
+plot_results(all_rewards, losses)
