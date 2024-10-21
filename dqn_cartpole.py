@@ -12,6 +12,8 @@ from lib.experience_buffer import ExperienceBuffer, Experience
 import os
 import matplotlib.pyplot as plt
 
+import pickle
+
 # Define the network structure - in this case 2 hidden layers (CartPole can be solved faster with a single hidden layer)
 class DqnNet(nn.Module):
   def __init__(self, obs_size, hidden_size, n_actions):
@@ -32,25 +34,42 @@ def epsilon_by_frame(frame_idx):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# hyperparameter_v1
 GAMMA = 0.99
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
 
-HIDDEN_SIZE = 128
+HIDDEN_SIZE = 256
 
-EPSILON_DECAY = 5000
+EPSILON_DECAY = 1000
 EPSILON_FINAL = 0.01
 EPSILON_START = 1.00
 
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 
-TARGET_NET_SYNC = 1e3
+TARGET_NET_SYNC = 1000
 
-ENV = "CartPole-v0" #start by using v0 which is faster to solve (instead of v1)
-MAX_EPISODE_STEPS = 200 if ENV == "CartPole-v0" else 500
+# hyperparameter_v0
+# GAMMA = 0.99
+# BATCH_SIZE = 512
+# REPLAY_SIZE = 10000
+# REPLAY_START_SIZE = 10000
+#
+# HIDDEN_SIZE = 256
+#
+# EPSILON_DECAY = 15000
+# EPSILON_FINAL = 0.01
+# EPSILON_START = 1.00
+#
+# LEARNING_RATE = 3e-4
+#
+# TARGET_NET_SYNC = 1000
+
+ENV = "CartPole-v1" #start by using v0 which is faster to solve (instead of v1)
+# MAX_EPISODE_STEPS = 200 if ENV == "CartPole-v0" else 500
 STOP_REWARD = 195.0 if ENV == "CartPole-v0" else 475.0
-MAX_FRAMES = 50000
+MAX_FRAMES = 3e8
 SAVED_MODELS_PATH = 'saved_models'
 
 env = gym.make(ENV)
@@ -72,6 +91,7 @@ all_rewards = []
 losses = []
 episode_reward = 0
 r100 = 0
+r100_plot = []
 episode_start = time.time()
 start = time.time()
 episode_frame = 0
@@ -111,17 +131,24 @@ def calculate_loss(net, target_net):
 
   return loss
 
-def plot_results(all_rewards, losses):
-  plt.figure(figsize=(12, 5))
-  plt.subplot(1, 2, 1)
-  plt.plot(all_rewards)
-  plt.title('Rewards')
 
-  plt.subplot(1, 2, 2)
-  plt.plot(losses)
-  plt.title('Losses')
+def plot_results(all_rewards):
+    plt.figure(figsize=(10, 9))
 
-  plt.show()
+    plt.suptitle(f'Training Results (LR: {LEARNING_RATE}, Epsilon Decay: {EPSILON_DECAY}), MAX Frame: {MAX_FRAMES}',)
+
+    plt.subplot(1, 1, 1)
+    plt.plot(all_rewards, label='Rewards')
+
+    plt.plot(range(len(r100_plot)), r100_plot, label='R100', color='orange')
+
+    plt.title('Rewards and R100')
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
 
 while True:
   frame_idx += 1
@@ -162,7 +189,11 @@ while True:
       r100 = np.mean(all_rewards[-100:])
       l100 = np.mean(losses[-100:])
       fps = (frame_idx - episode_frame) / (time.time() - episode_start)
-      print(f"Frame: {frame_idx}: R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f}, L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
+      r100_plot.append(r100)
+      print(f"Frame: {frame_idx}: R100: {r100: .2f}, MaxR: {max_reward: .2f}, R: {episode_reward: .2f}, FPS: {fps: .1f},"
+            f" L100: {l100: .2f}, Epsilon: {epsilon: .4f}")
+    else:
+      r100_plot.append(0)
 
     episode_reward = 0
     episode_frame = frame_idx
@@ -191,4 +222,7 @@ while True:
     print(f"Ran out of time at {time.time() - start}")
     break
 
-plot_results(all_rewards, losses)
+# plot_results(all_rewards)
+
+with open(f'Q2-{ENV}.pkl', 'wb') as f:
+  pickle.dump({'all_rewards': all_rewards, 'r100_plot': r100_plot}, f)
