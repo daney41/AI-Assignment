@@ -15,7 +15,7 @@ CartPole-v0:
 
 
   stopping_reward: 195
-  max_frames: 2.0e+5
+  max_frames: 2.0e+8
 
   save_path: saved_models
 
@@ -72,7 +72,7 @@ LunarLander-v3:
   tau: 0.005
 
   stopping_reward: 200
-  max_frames: 1.0e+6
+  max_frames: 1.0e+8
 
   save_path: saved_models
 
